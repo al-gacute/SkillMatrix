@@ -1,0 +1,35 @@
+{
+    "name": "skillmatrix",
+    "version": "1.0.0",
+    "description": "Full-stack skills management platform",
+    "scripts": {
+        "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+        "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+        "dev:server": "cd server && npm run dev",
+        "dev:client": "cd client && npm run dev",
+        "test:contracts": "node tests/ui-contracts-check.mjs",
+        "build": "npm run build:client && npm run build:server",
+        "build:client": "cd client && npm run build",
+        "build:server": "cd server && npm run build",
+        "start": "cd server && npm start",
+        "start:prod": "node server/dist/index.js",
+        "lint": "npm run lint:client && npm run lint:server",
+        "lint:client": "cd client && npm run lint",
+        "lint:server": "cd server && npm run lint",
+        "docker:build": "docker-compose build",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "azure:deploy": "az webapp up --name skillmatrix --resource-group skillmatrix-rg --runtime \"NODE:18-lts\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/your-username/skillmatrix.git"
+    },
+    "license": "MIT"
+}

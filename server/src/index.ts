@@ -6,9 +6,6 @@ import routes from './routes';
 
 const app: Express = express();
 
-// Connect to database
-connectDB();
-
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -42,8 +39,17 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 
 const PORT = config.port;
 
-app.listen(PORT, () => {
-    console.log(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
+const startServer = async (): Promise<void> => {
+    await connectDB();
+
+    app.listen(PORT, () => {
+        console.log(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
+    });
+};
+
+startServer().catch((error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
 });
 
 export default app;

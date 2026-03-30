@@ -92,6 +92,8 @@ cp .env.example .env
 # Edit .env with your MongoDB URI and JWT secret
 ```
 
+The API boot process also ensures the core system roles and the two default admin accounts exist in the connected database. On a fresh deployment, these defaults are created automatically unless those emails already exist.
+
 ### Development
 
 1. Start MongoDB (if running locally)

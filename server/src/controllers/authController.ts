@@ -7,10 +7,7 @@ import { createAdminNotifications } from './notificationController';
 import { checkForDuplicateUser } from '../utils/userDuplicateChecks';
 import { addUpdateAuditFields } from '../utils/audit';
 
-const HIGH_LEVEL_ACCOUNT_EMAILS = new Set([
-    'admin@skillmatrix.com',
-    'superadmin@skillmatrix.com',
-]);
+const HIGH_LEVEL_ACCOUNT_EMAILS = new Set(config.highLevelAccountEmails);
 
 const generateToken = (id: string): string => {
     const options: SignOptions = { expiresIn: config.jwtExpire as jwt.SignOptions['expiresIn'] };

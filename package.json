@@ -22,6 +22,7 @@
         "azure:deploy": "az webapp up --name skillmatrix --resource-group skillmatrix-rg --runtime \"NODE:18-lts\""
     },
     "devDependencies": {
+        "@types/express": "^5.0.6",
         "concurrently": "^8.2.2"
     },
     "engines": {

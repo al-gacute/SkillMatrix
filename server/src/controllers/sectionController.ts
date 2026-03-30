@@ -9,6 +9,7 @@ import {
     shouldIncludeDeleted,
     softDeleteDocument,
 } from '../utils/audit';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 // @desc    Get all sections
 // @route   GET /api/sections
@@ -35,14 +36,17 @@ export const getSections = async (req: Request, res: Response): Promise<void> =>
                     .lean();
                 const teamIds = sectionTeams.map((team) => team._id);
                 const userIdsFromTeamField = teamIds.length > 0
-                    ? await User.find({ team: { $in: teamIds } }).distinct('_id')
+                    ? await User.find(excludeSystemUserAccounts({ team: { $in: teamIds } })).distinct('_id')
                     : [];
-                const userIdsFromMembersArray = sectionTeams.flatMap((team) =>
+                const rawMemberIdsFromTeams = sectionTeams.flatMap((team) =>
                     (team.members || []).map((memberId) => String(memberId))
                 );
+                const userIdsFromMembersArray = rawMemberIdsFromTeams.length > 0
+                    ? await User.find(excludeSystemUserAccounts({ _id: { $in: rawMemberIdsFromTeams } })).distinct('_id')
+                    : [];
                 const userCount = new Set([
                     ...userIdsFromTeamField.map((userId) => String(userId)),
-                    ...userIdsFromMembersArray,
+                    ...userIdsFromMembersArray.map((userId) => String(userId)),
                 ]).size;
 
                 return {
@@ -151,14 +155,17 @@ export const deleteSection = async (req: AuthRequest, res: Response): Promise<vo
             .lean();
         const teamIds = sectionTeams.map((team) => team._id);
         const userIdsFromTeamField = teamIds.length > 0
-            ? await User.find({ team: { $in: teamIds } }).distinct('_id')
+            ? await User.find(excludeSystemUserAccounts({ team: { $in: teamIds } })).distinct('_id')
             : [];
-        const userIdsFromMembersArray = sectionTeams.flatMap((team) =>
+        const rawMemberIdsFromTeams = sectionTeams.flatMap((team) =>
             (team.members || []).map((memberId) => String(memberId))
         );
+        const userIdsFromMembersArray = rawMemberIdsFromTeams.length > 0
+            ? await User.find(excludeSystemUserAccounts({ _id: { $in: rawMemberIdsFromTeams } })).distinct('_id')
+            : [];
         const assignedMemberCount = new Set([
             ...userIdsFromTeamField.map((userId) => String(userId)),
-            ...userIdsFromMembersArray,
+            ...userIdsFromMembersArray.map((userId) => String(userId)),
         ]).size;
 
         if (teamIds.length > 0 || assignedMemberCount > 0) {

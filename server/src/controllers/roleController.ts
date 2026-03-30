@@ -11,6 +11,7 @@ import {
     softDeleteDocument,
 } from '../utils/audit';
 import { DEFAULT_BROWSE_MATRIX_ACCESS, getGlobalAppSettingsKey } from '../utils/browseMatrixAccess';
+import { excludeSystemUserAccounts, getSystemUserExclusionClause } from '../utils/systemUserFilter';
 
 type OrganizationScope = 'department' | 'section' | 'team';
 
@@ -48,6 +49,7 @@ const attachUserCounts = async <T extends { key: string }>(roles: T[]) => {
         {
             $match: {
                 deletedAt: null,
+                ...getSystemUserExclusionClause(),
             },
         },
         {
@@ -299,7 +301,7 @@ export const deleteRole = async (req: AuthRequest, res: Response): Promise<void>
         }
 
         // Check if any users have this role
-        const usersWithRole = await User.countDocuments({ role: role.key });
+        const usersWithRole = await User.countDocuments(excludeSystemUserAccounts({ role: role.key }));
         if (usersWithRole > 0) {
             res.status(400).json({
                 success: false,

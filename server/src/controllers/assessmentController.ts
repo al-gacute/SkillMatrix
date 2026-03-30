@@ -3,6 +3,7 @@ import { Assessment, User, ROLE_HIERARCHY } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { createNotificationForUser } from './notificationController';
 import { addCreateAuditFields, buildDeletedAtFilter, softDeleteDocument } from '../utils/audit';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 type ScopedUser = {
     _id: { toString(): string } | string;
@@ -188,10 +189,10 @@ export const getSubordinates = async (req: AuthRequest, res: Response): Promise<
 
         const currentRoleLevel = assessor.roleLevel || ROLE_HIERARCHY[assessor.role] || 1;
 
-        const candidates = await User.find({
+        const candidates = await User.find(excludeSystemUserAccounts({
             roleLevel: { $lt: currentRoleLevel },
             _id: { $ne: assessor._id },
-        })
+        }))
             .select('firstName lastName email role roleLevel department team avatar title')
             .populate(assessmentUserPopulate[0].path, assessmentUserPopulate[0].select)
             .populate(assessmentUserPopulate[1]);

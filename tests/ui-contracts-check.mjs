@@ -16,7 +16,7 @@ const checks = [
 
             assert.match(departmentController, /sectionCount\s*=\s*await Section\.countDocuments/);
             assert.match(departmentController, /teamCount\s*=\s*await Team\.countDocuments/);
-            assert.match(departmentController, /memberCount\s*=\s*await User\.countDocuments/);
+            assert.match(departmentController, /memberCount\s*=\s*await User\.countDocuments\(/);
 
             assert.match(departmentsPage, /getDepartmentSections\(department\._id\)/);
             assert.match(departmentsPage, /getDepartmentTeams\(department\._id\)/);
@@ -41,7 +41,7 @@ const checks = [
             assert.match(sectionsPage, /<option key=\{department\._id\} value=\{department\._id\}>/);
             assert.match(sectionsPage, /getSectionTeams\(section\._id\)/);
             assert.match(sectionController, /Team\.find\(\{ section: section\._id,\s*deletedAt: null \}\)/);
-            assert.match(sectionController, /User\.find\(\{ team: \{ \$in: teamIds \} \}\)\.distinct\('_id'\)/);
+            assert.match(sectionController, /User\.find\([\s\S]*team: \{ \$in: teamIds \}[\s\S]*\)\.distinct\('_id'\)/);
             assert.match(sectionController, /team\.members \|\| \[\]/);
             assert.match(sectionsPage, /const fallbackUserCount = sectionTeams\.reduce/);
             assert.match(sectionsPage, /const sectionUserCount = Math\.max\(section\.userCount \?\? 0, fallbackUserCount\)/);

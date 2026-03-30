@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PlusIcon, BuildingOfficeIcon, PencilIcon, TrashIcon, RectangleStackIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { departmentService, sectionService, teamService } from '../services';
-import { Department, Section, Team, User } from '../types';
+import { Department, Section, Team } from '../types';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -15,7 +15,6 @@ const Departments: React.FC = () => {
     const [teams, setTeams] = useState<Team[]>([]);
     const [filters, setFilters] = useState({
         department: '',
-        manager: '',
         section: '',
         team: '',
     });
@@ -124,20 +123,6 @@ const Departments: React.FC = () => {
             return teamDepartmentId === departmentId;
         });
 
-    const getManagerLabel = (manager?: User | string) => {
-        if (!manager) return 'No manager';
-        if (typeof manager === 'string') return manager;
-        return `${manager.firstName} ${manager.lastName}`;
-    };
-
-    const managerOptions = departments
-        .filter((department): department is Department & { manager: User | string } => Boolean(department.manager))
-        .map((department) => ({
-            value: typeof department.manager === 'string' ? department.manager : department.manager._id || department.manager.id,
-            label: getManagerLabel(department.manager),
-        }))
-        .filter((option, index, allOptions) => option.value && allOptions.findIndex((candidate) => candidate.value === option.value) === index);
-
     const filteredSections = sections.filter((section) => {
         if (!filters.department) return true;
         const departmentId =
@@ -165,17 +150,8 @@ const Departments: React.FC = () => {
     const filteredDepartments = departments.filter((department) => {
         const departmentSections = getDepartmentSections(department._id);
         const departmentTeams = getDepartmentTeams(department._id);
-        const managerId = department.manager
-            ? typeof department.manager === 'string'
-                ? department.manager
-                : department.manager._id || department.manager.id
-            : '';
 
         if (filters.department && department._id !== filters.department) {
-            return false;
-        }
-
-        if (filters.manager && managerId !== filters.manager) {
             return false;
         }
 
@@ -193,7 +169,6 @@ const Departments: React.FC = () => {
     const clearFilters = () => {
         setFilters({
             department: '',
-            manager: '',
             section: '',
             team: '',
         });
@@ -239,18 +214,6 @@ const Departments: React.FC = () => {
                         ))}
                     </select>
                     <select
-                        value={filters.manager}
-                        onChange={(e) => setFilters({ ...filters, manager: e.target.value })}
-                        className="input w-full sm:w-48"
-                    >
-                        <option value="">All Managers</option>
-                        {managerOptions.map((manager) => (
-                            <option key={manager.value} value={manager.value}>
-                                {manager.label}
-                            </option>
-                        ))}
-                    </select>
-                    <select
                         value={filters.section}
                         onChange={(e) => setFilters({ ...filters, section: e.target.value, team: '' })}
                         className="input w-full sm:w-48"
@@ -274,7 +237,7 @@ const Departments: React.FC = () => {
                             </option>
                         ))}
                     </select>
-                    {(filters.department || filters.manager || filters.section || filters.team) && (
+                    {(filters.department || filters.section || filters.team) && (
                         <button
                             onClick={clearFilters}
                             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors whitespace-nowrap"
@@ -305,9 +268,6 @@ const Departments: React.FC = () => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                         Department
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                        Manager
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                         Sections
@@ -344,15 +304,6 @@ const Departments: React.FC = () => {
                                                     </p>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {department.manager ? (
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {getManagerLabel(department.manager)}
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm text-gray-400">No manager</span>
-                                            )}
                                         </td>
                                         <td className="px-6 py-4">
                                             {departmentSections.length > 0 ? (

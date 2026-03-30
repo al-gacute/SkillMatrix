@@ -33,6 +33,16 @@ const TeamDetail: React.FC = () => {
   const [team, setTeam] = useState<TeamDetailData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const getCompanyPositionLabel = (member: User) => {
+    if (!member.projectPosition) {
+      return 'No company position';
+    }
+
+    return typeof member.projectPosition === 'string'
+      ? member.projectPosition
+      : member.projectPosition.name;
+  };
+
   useEffect(() => {
     const fetchTeam = async () => {
       if (!id) return;
@@ -132,7 +142,7 @@ const TeamDetail: React.FC = () => {
                     <p className="font-medium text-gray-900">
                       {member.firstName} {member.lastName}
                     </p>
-                    <p className="text-sm text-gray-500">{member.title || 'No title'}</p>
+                    <p className="text-sm text-gray-500">{getCompanyPositionLabel(member)}</p>
                   </div>
                 </Link>
               ))}

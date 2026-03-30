@@ -3,6 +3,7 @@ import { Feedback, User, ROLE_HIERARCHY } from '../models';
 import { AuthRequest } from '../middleware/auth';
 import { createNotificationForUser } from './notificationController';
 import { addCreateAuditFields, buildDeletedAtFilter, softDeleteDocument } from '../utils/audit';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 // @desc    Get feedback (given, received, or all visible)
 // @route   GET /api/feedback
@@ -382,9 +383,9 @@ export const getTeamFeedback = async (req: AuthRequest, res: Response): Promise<
         }
 
         // Get all users with lower role level
-        const subordinateIds = await User.find({
+        const subordinateIds = await User.find(excludeSystemUserAccounts({
             roleLevel: { $lt: userRoleLevel },
-        }).distinct('_id');
+        })).distinct('_id');
 
         const teamFeedback = await Feedback.find({
             $or: [

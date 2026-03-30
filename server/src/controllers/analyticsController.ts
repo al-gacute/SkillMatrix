@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { User, Skill, SkillCategory, UserSkill, Team, Department, Endorsement, Section } from '../models';
+import { excludeSystemUserAccounts, getSystemUserEmails } from '../utils/systemUserFilter';
 
 // @desc    Get dashboard statistics
 // @route   GET /api/analytics/dashboard
 // @access  Private
 export const getDashboardStats = async (req: Request, res: Response): Promise<void> => {
     try {
+        const systemUserEmails = getSystemUserEmails();
+
         const [
             totalUsers,
             totalSkills,
@@ -14,7 +17,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
             totalDepartments,
             totalEndorsements,
         ] = await Promise.all([
-            User.countDocuments(),
+            User.countDocuments(excludeSystemUserAccounts()),
             Skill.countDocuments(),
             SkillCategory.countDocuments(),
             Team.countDocuments(),
@@ -25,6 +28,20 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
         // Skills by proficiency level
         const skillsByProficiency = await UserSkill.aggregate([
             {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userInfo',
+                },
+            },
+            { $unwind: '$userInfo' },
+            {
+                $match: {
+                    'userInfo.email': { $nin: systemUserEmails },
+                },
+            },
+            {
                 $group: {
                     _id: '$proficiencyLevel',
                     count: { $sum: 1 },
@@ -34,6 +51,20 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
 
         // Top skills by user count
         const topSkills = await UserSkill.aggregate([
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userInfo',
+                },
+            },
+            { $unwind: '$userInfo' },
+            {
+                $match: {
+                    'userInfo.email': { $nin: systemUserEmails },
+                },
+            },
             {
                 $group: {
                     _id: '$skill',
@@ -74,6 +105,20 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
 
         // Skills by category
         const skillsByCategory = await UserSkill.aggregate([
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userInfo',
+                },
+            },
+            { $unwind: '$userInfo' },
+            {
+                $match: {
+                    'userInfo.email': { $nin: systemUserEmails },
+                },
+            },
             {
                 $lookup: {
                     from: 'skills',
@@ -142,7 +187,7 @@ export const getSkillGaps = async (req: Request, res: Response): Promise<void> =
             userFilter.department = departmentId;
         }
 
-        const users = await User.find(userFilter).select('_id');
+        const users = await User.find(excludeSystemUserAccounts(userFilter)).select('_id');
         const userIds = users.map((u) => u._id);
 
         // Get all skills
@@ -205,6 +250,8 @@ export const getSkillGaps = async (req: Request, res: Response): Promise<void> =
 // @access  Private
 export const getTopEndorsers = async (req: Request, res: Response): Promise<void> => {
     try {
+        const systemUserEmails = getSystemUserEmails();
+
         const topEndorsers = await Endorsement.aggregate([
             {
                 $group: {
@@ -223,6 +270,11 @@ export const getTopEndorsers = async (req: Request, res: Response): Promise<void
                 },
             },
             { $unwind: '$userInfo' },
+            {
+                $match: {
+                    'userInfo.email': { $nin: systemUserEmails },
+                },
+            },
             {
                 $project: {
                     firstName: '$userInfo.firstName',
@@ -347,35 +399,25 @@ export const getOrganizationAlerts = async (req: Request, res: Response): Promis
         ];
 
         const [usersWithoutTeam, usersWithoutProjectPosition, teamsWithoutSection, rawSections] = await Promise.all([
-            User.find({
+            User.find(excludeSystemUserAccounts({
                 isApproved: true,
                 role: { $nin: excludedAdminRoles },
                 $or: [
                     { team: { $exists: false } },
                     { team: null },
                 ],
-                $nor: [
-                    { firstName: 'Super', lastName: 'Admin' },
-                    { firstName: 'System', lastName: 'Administrator' },
-                    { firstName: 'System', lastName: 'Admin' },
-                ],
-            })
+            }))
                 .select('firstName lastName email department')
                 .populate('department', 'name')
                 .sort({ firstName: 1, lastName: 1 }),
-            User.find({
+            User.find(excludeSystemUserAccounts({
                 isApproved: true,
                 role: { $nin: excludedAdminRoles },
                 $or: [
                     { projectPosition: { $exists: false } },
                     { projectPosition: null },
                 ],
-                $nor: [
-                    { firstName: 'Super', lastName: 'Admin' },
-                    { firstName: 'System', lastName: 'Administrator' },
-                    { firstName: 'System', lastName: 'Admin' },
-                ],
-            })
+            }))
                 .select('firstName lastName email department')
                 .populate('department', 'name')
                 .sort({ firstName: 1, lastName: 1 }),

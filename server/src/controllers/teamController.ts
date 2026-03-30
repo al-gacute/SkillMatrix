@@ -10,6 +10,7 @@ import {
     shouldIncludeDeleted,
     softDeleteDocument,
 } from '../utils/audit';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 // @desc    Get all teams
 // @route   GET /api/teams
@@ -38,7 +39,7 @@ export const getTeams = async (req: Request, res: Response): Promise<void> => {
         // Get member count for each team
         const teamsWithCount = await Promise.all(
             teams.map(async (team) => {
-                const memberCount = await User.countDocuments({ team: team._id });
+                const memberCount = await User.countDocuments(excludeSystemUserAccounts({ team: team._id }));
                 return {
                     ...team.toObject(),
                     memberCount,
@@ -77,8 +78,9 @@ export const getTeam = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const members = await User.find({ team: req.params.id })
-            .select('firstName lastName email avatar title')
+        const members = await User.find(excludeSystemUserAccounts({ team: req.params.id }))
+            .select('firstName lastName email avatar title projectPosition')
+            .populate('projectPosition', 'name')
             .sort({ firstName: 1 });
 
         // Get skill distribution for the team
@@ -240,7 +242,7 @@ export const deleteTeam = async (req: AuthRequest, res: Response): Promise<void>
             return;
         }
 
-        const memberCount = await User.countDocuments({ team: req.params.id });
+        const memberCount = await User.countDocuments(excludeSystemUserAccounts({ team: req.params.id }));
 
         if (memberCount > 0) {
             res.status(400).json({

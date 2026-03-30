@@ -9,6 +9,7 @@ import {
     softDeleteDocument,
 } from '../utils/audit';
 import { validateSingleUserAssignments } from '../utils/userAssignments';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 // Get all notifications for current user
 export const getMyNotifications = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -582,7 +583,7 @@ export const createUserNotifications = async (
             isActive: true,
         };
 
-        const users = await User.find(filter).select('_id');
+        const users = await User.find(excludeSystemUserAccounts(filter)).select('_id');
 
         if (users.length === 0) {
             return;

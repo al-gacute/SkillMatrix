@@ -6,6 +6,7 @@ import { checkForDuplicateUser } from '../utils/userDuplicateChecks';
 import { buildSoftDeleteSetUpdate, softDeleteDocument } from '../utils/audit';
 import { canBrowseMatrixUser, getBrowseMatrixAccessMode, getUserRoleLevel, isBrowseMatrixContext } from '../utils/browseMatrixAccess';
 import { validateSingleUserAssignments } from '../utils/userAssignments';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 const userDetailPopulate = [
     { path: 'projectPosition', select: 'name' },
@@ -100,8 +101,10 @@ export const getUsers = async (req: AuthRequest, res: Response): Promise<void> =
             }
         }
 
-        const total = await User.countDocuments(query);
-        const users = await User.find(query)
+        const visibleUserQuery = excludeSystemUserAccounts(query);
+
+        const total = await User.countDocuments(visibleUserQuery);
+        const users = await User.find(visibleUserQuery)
             .select('-password')
             .populate('projectPosition', 'name')
             .populate('department', 'name')

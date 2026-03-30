@@ -9,6 +9,7 @@ import {
     shouldIncludeDeleted,
     softDeleteDocument,
 } from '../utils/audit';
+import { excludeSystemUserAccounts } from '../utils/systemUserFilter';
 
 // @desc    Get all departments
 // @route   GET /api/departments
@@ -24,7 +25,7 @@ export const getDepartments = async (req: Request, res: Response): Promise<void>
         // Get member count for each department
         const departmentsWithCount = await Promise.all(
             departments.map(async (dept) => {
-                const memberCount = await User.countDocuments({ department: dept._id });
+                const memberCount = await User.countDocuments(excludeSystemUserAccounts({ department: dept._id }));
                 const sectionCount = await Section.countDocuments({ department: dept._id, deletedAt: null });
                 const teamCount = await Team.countDocuments({ department: dept._id, deletedAt: null });
                 return {
@@ -61,7 +62,7 @@ export const getDepartment = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        const members = await User.find({ department: req.params.id })
+        const members = await User.find(excludeSystemUserAccounts({ department: req.params.id }))
             .select('firstName lastName email avatar title')
             .sort({ firstName: 1 });
 
@@ -157,7 +158,7 @@ export const deleteDepartment = async (req: AuthRequest, res: Response): Promise
         }
 
         const [memberCount, sectionCount, teamCount] = await Promise.all([
-            User.countDocuments({ department: req.params.id }),
+            User.countDocuments(excludeSystemUserAccounts({ department: req.params.id })),
             Section.countDocuments({ department: req.params.id, deletedAt: null }),
             Team.countDocuments({ department: req.params.id, deletedAt: null }),
         ]);

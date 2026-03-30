@@ -39,6 +39,23 @@ const getHydratedAuthUser = async (userId?: string) => {
     return User.findById(userId).populate(authUserPopulate);
 };
 
+const getFallbackAuthUser = async (userId?: string) => {
+    if (!userId) {
+        return null;
+    }
+
+    return User.findById(userId).select('-password');
+};
+
+const getSafeAuthUser = async (userId?: string) => {
+    try {
+        return await getHydratedAuthUser(userId);
+    } catch (error) {
+        console.warn('Falling back to non-populated auth user payload:', error);
+        return getFallbackAuthUser(userId);
+    }
+};
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -144,7 +161,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         }
 
         const token = generateToken(user._id.toString());
-        const hydratedUser = await getHydratedAuthUser(user._id.toString());
+        const hydratedUser = await getSafeAuthUser(user._id.toString());
 
         if (!hydratedUser) {
             res.status(404).json({ success: false, message: 'User not found' });
@@ -169,7 +186,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 // @access  Private
 export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const user = await getHydratedAuthUser(req.user?._id?.toString());
+        const user = await getSafeAuthUser(req.user?._id?.toString());
 
         res.status(200).json({
             success: true,
@@ -210,7 +227,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
             return;
         }
 
-        const user = await getHydratedAuthUser(updatedUser?._id?.toString());
+        const user = await getSafeAuthUser(updatedUser?._id?.toString());
 
         res.status(200).json({
             success: true,

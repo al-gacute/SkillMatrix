@@ -126,6 +126,21 @@ const ensureDefaultAdminUsers = async (): Promise<number> => {
                 shouldSave = true;
             }
 
+            if (existingUser.projectPosition) {
+                existingUser.projectPosition = undefined;
+                shouldSave = true;
+            }
+
+            if (existingUser.department) {
+                existingUser.department = undefined;
+                shouldSave = true;
+            }
+
+            if (existingUser.team) {
+                existingUser.team = undefined;
+                shouldSave = true;
+            }
+
             if (existingUser.deletedAt !== null) {
                 existingUser.deletedAt = null;
                 existingUser.deletedBy = undefined;
@@ -158,6 +173,9 @@ const ensureDefaultAdminUsers = async (): Promise<number> => {
             role: 'admin',
             roleLevel: adminRoleLevel,
             avatar: '',
+            projectPosition: undefined,
+            department: undefined,
+            team: undefined,
             isApproved: true,
             isActive: true,
             deletedAt: null,

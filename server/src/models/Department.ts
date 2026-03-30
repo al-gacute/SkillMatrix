@@ -15,7 +15,6 @@ const departmentSchema = new Schema<IDepartment>(
         name: {
             type: String,
             required: [true, 'Department name is required'],
-            unique: true,
             trim: true,
         },
         description: {

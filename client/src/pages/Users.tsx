@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { MagnifyingGlassIcon, BuildingOfficeIcon, RectangleStackIcon, UserGroupIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
 import { userService, departmentService, teamService, roleService, sectionService } from '../services';
 import { User, Department, Team, Section } from '../types';
@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { Role } from '../services/roleService';
 
 const Users: React.FC = () => {
+    const navigate = useNavigate();
     const [users, setUsers] = useState<User[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [sections, setSections] = useState<Section[]>([]);
@@ -229,10 +230,10 @@ const Users: React.FC = () => {
                                     <tr
                                         key={user._id || user.id}
                                         className={`hover:bg-gray-50 cursor-pointer transition-colors ${user.isActive === false ? 'opacity-60' : ''}`}
-                                        onClick={() => window.location.href = `/users/${user._id || user.id}`}
+                                        onClick={() => navigate(`/users/${user._id || user.id}`)}
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <Link to={`/users/${user._id || user.id}`} className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3">
                                                 <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
                                                     {user.avatar ? (
                                                         <img src={user.avatar} alt="" className="h-10 w-10 rounded-full" />
@@ -248,7 +249,7 @@ const Users: React.FC = () => {
                                                     </p>
                                                     <p className="text-sm text-gray-500">{user.title || ''}</p>
                                                 </div>
-                                            </Link>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm text-gray-600">{user.email}</span>

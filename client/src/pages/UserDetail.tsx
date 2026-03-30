@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import { ArrowLeftIcon, PencilIcon, CheckIcon, XMarkIcon, CalendarDaysIcon, NoSymbolIcon, ArrowPathIcon, BriefcaseIcon, BuildingOfficeIcon, RectangleStackIcon, UserGroupIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { userService, departmentService, teamService, roleService, sectionService, projectPositionService, assessmentService } from '../services';
 import { User, UserSkill, SkillCategory, ROLE_LABELS, ROLE_LEVELS, UserRole, Department, Team, Section, ProficiencyLevel, formatProficiencyLevel, ProjectPosition } from '../types';
@@ -75,6 +76,7 @@ const UserDetail: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [skills, setSkills] = useState<UserSkill[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [departments, setDepartments] = useState<Department[]>([]);
@@ -122,6 +124,8 @@ const UserDetail: React.FC = () => {
     const fetchData = async () => {
         if (!id) return;
         try {
+            setLoading(true);
+            setLoadError('');
             const response = await userService.getUser(id);
             if (response.success && response.data) {
                 setUser(response.data.user);
@@ -138,9 +142,22 @@ const UserDetail: React.FC = () => {
                     team: typeof u.team === 'object' ? u.team?._id || '' : u.team || '',
                     hireDate: u.hireDate ? u.hireDate.split('T')[0] : '',
                 });
+            } else {
+                setUser(null);
+                setSkills([]);
+                setLoadError(response.message || 'Failed to load user.');
             }
         } catch (error) {
             console.error('Failed to fetch user:', error);
+            setUser(null);
+            setSkills([]);
+            if (axios.isAxiosError(error)) {
+                setLoadError(error.response?.data?.message || error.message || 'Failed to load user.');
+            } else if (error instanceof Error) {
+                setLoadError(error.message || 'Failed to load user.');
+            } else {
+                setLoadError('Failed to load user.');
+            }
         } finally {
             setLoading(false);
         }
@@ -374,7 +391,7 @@ const UserDetail: React.FC = () => {
     if (!user) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-500">User not found</p>
+                <p className="text-gray-500">{loadError || 'User not found'}</p>
                 <Link to="/users" className="text-primary-600 hover:underline mt-2 inline-block">
                     Back to Users
                 </Link>

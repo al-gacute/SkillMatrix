@@ -7,6 +7,30 @@ import { buildSoftDeleteSetUpdate, softDeleteDocument } from '../utils/audit';
 import { canBrowseMatrixUser, getBrowseMatrixAccessMode, getUserRoleLevel, isBrowseMatrixContext } from '../utils/browseMatrixAccess';
 import { validateSingleUserAssignments } from '../utils/userAssignments';
 
+const userDetailPopulate = [
+    { path: 'projectPosition', select: 'name' },
+    { path: 'department', select: 'name' },
+    {
+        path: 'team',
+        select: 'name section',
+        populate: { path: 'section', select: 'name department' },
+    },
+];
+
+const getPopulatedUserById = async (userId: string) =>
+    User.findById(userId)
+        .select('-password')
+        .populate(userDetailPopulate);
+
+const getSafeUserById = async (userId: string) => {
+    try {
+        return await getPopulatedUserById(userId);
+    } catch (error) {
+        console.warn('Falling back to non-populated user payload:', error);
+        return User.findById(userId).select('-password');
+    }
+};
+
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private
@@ -113,15 +137,7 @@ export const getUsers = async (req: AuthRequest, res: Response): Promise<void> =
 export const getUser = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const browseMatrixContext = isBrowseMatrixContext(req.query.context);
-        const user = await User.findById(req.params.id)
-            .select('-password')
-            .populate('projectPosition', 'name')
-            .populate('department', 'name')
-            .populate({
-                path: 'team',
-                select: 'name section',
-                populate: { path: 'section', select: 'name department' },
-            });
+        const user = await getSafeUserById(req.params.id);
 
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });

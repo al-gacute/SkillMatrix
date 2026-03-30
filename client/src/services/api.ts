@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_URL = '/api';
+const normalizeApiBaseUrl = (value?: string): string => {
+    if (!value || !value.trim()) {
+        return '/api';
+    }
+
+    return value.replace(/\/+$/, '');
+};
+
+const API_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 const api = axios.create({
     baseURL: API_URL,
@@ -25,7 +33,18 @@ api.interceptors.request.use(
 
 // Response interceptor to handle errors
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const contentTypeHeader = response.headers?.['content-type'];
+        const contentType = Array.isArray(contentTypeHeader) ? contentTypeHeader.join(';') : contentTypeHeader;
+
+        if (typeof response.data === 'string' && typeof contentType === 'string' && contentType.includes('text/html')) {
+            return Promise.reject(
+                new Error('API URL is misconfigured. Configure VITE_API_URL to point to your backend /api endpoint.')
+            );
+        }
+
+        return response;
+    },
     (error) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');

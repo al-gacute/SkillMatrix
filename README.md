@@ -92,6 +92,8 @@ cp .env.example .env
 # Edit .env with your MongoDB URI and JWT secret
 ```
 
+For the frontend, create `client/.env` from `client/.env.example`. Use `VITE_API_URL=/api` when the frontend and API share one origin, or set it to your deployed backend URL such as `https://your-api.onrender.com/api` when they are separate services.
+
 The API boot process also ensures the core system roles and the two default admin accounts exist in the connected database. On startup, those built-in admin accounts are synchronized to the configured credentials unless `SYNC_DEFAULT_ADMIN_PASSWORDS=false` is set.
 
 ### Development

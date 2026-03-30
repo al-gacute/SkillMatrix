@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { User, AuthState } from '../types';
 import { authService } from '../services';
 
@@ -67,27 +68,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         initAuth();
     }, []);
 
+    const getApiErrorMessage = (error: unknown, fallback: string): string => {
+        if (axios.isAxiosError(error)) {
+            const responseMessage = error.response?.data?.message;
+
+            if (typeof responseMessage === 'string' && responseMessage.trim()) {
+                return responseMessage;
+            }
+        }
+
+        if (error instanceof Error && error.message.trim()) {
+            return error.message;
+        }
+
+        return fallback;
+    };
+
     const login = async (email: string, password: string): Promise<void> => {
-        const response = await authService.login({ email, password });
-        if (response.success && response.data) {
-            const { user, token } = response.data;
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            setState({
-                user,
-                token,
-                isAuthenticated: true,
-                isLoading: false,
-            });
-        } else {
+        try {
+            const response = await authService.login({ email, password });
+            if (response.success && response.data) {
+                const { user, token } = response.data;
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(user));
+                setState({
+                    user,
+                    token,
+                    isAuthenticated: true,
+                    isLoading: false,
+                });
+                return;
+            }
+
             throw new Error(response.message || 'Login failed');
+        } catch (error) {
+            throw new Error(getApiErrorMessage(error, 'Login failed'));
         }
     };
 
     const register = async (data: { email: string; password: string; firstName: string; lastName: string }): Promise<void> => {
-        const response = await authService.register(data);
-        if (!response.success) {
-            throw new Error(response.message || 'Registration failed');
+        try {
+            const response = await authService.register(data);
+            if (!response.success) {
+                throw new Error(response.message || 'Registration failed');
+            }
+        } catch (error) {
+            throw new Error(getApiErrorMessage(error, 'Registration failed'));
         }
     };
 

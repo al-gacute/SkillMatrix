@@ -79,19 +79,79 @@ const ensureDefaultRoles = async (): Promise<number> => {
 };
 
 const ensureDefaultAdminUsers = async (): Promise<number> => {
-    let createdCount = 0;
+    let updatedCount = 0;
     const adminRole = await Role.findOne({ key: 'admin' }).lean();
     const adminRoleLevel = adminRole?.level || 100;
 
     for (const account of config.defaultAdminAccounts) {
-        const existingUser = await User.findOne({ email: account.email.toLowerCase() });
+        const normalizedEmail = account.email.toLowerCase();
+        const existingUser = await User.findOne({ email: normalizedEmail }).select('+password');
 
         if (existingUser) {
+            let shouldSave = false;
+
+            if (existingUser.firstName !== account.firstName) {
+                existingUser.firstName = account.firstName;
+                shouldSave = true;
+            }
+
+            if (existingUser.lastName !== account.lastName) {
+                existingUser.lastName = account.lastName;
+                shouldSave = true;
+            }
+
+            if (existingUser.role !== 'admin') {
+                existingUser.role = 'admin';
+                shouldSave = true;
+            }
+
+            if (existingUser.roleLevel !== adminRoleLevel) {
+                existingUser.roleLevel = adminRoleLevel;
+                shouldSave = true;
+            }
+
+            if (existingUser.isApproved !== true) {
+                existingUser.isApproved = true;
+                shouldSave = true;
+            }
+
+            if (existingUser.isActive !== true) {
+                existingUser.isActive = true;
+                existingUser.deactivatedAt = undefined;
+                shouldSave = true;
+            }
+
+            if (existingUser.avatar !== '') {
+                existingUser.avatar = '';
+                shouldSave = true;
+            }
+
+            if (existingUser.deletedAt !== null) {
+                existingUser.deletedAt = null;
+                existingUser.deletedBy = undefined;
+                shouldSave = true;
+            }
+
+            if (config.syncDefaultAdminPasswords) {
+                const passwordMatches = await existingUser.comparePassword(account.password);
+
+                if (!passwordMatches) {
+                    existingUser.password = account.password;
+                    shouldSave = true;
+                }
+            }
+
+            if (shouldSave) {
+                existingUser.updatedBy = existingUser._id;
+                await existingUser.save();
+                updatedCount += 1;
+            }
+
             continue;
         }
 
         const user = new User({
-            email: account.email.toLowerCase(),
+            email: normalizedEmail,
             password: account.password,
             firstName: account.firstName,
             lastName: account.lastName,
@@ -107,19 +167,19 @@ const ensureDefaultAdminUsers = async (): Promise<number> => {
         user.updatedBy = user._id;
 
         await user.save();
-        createdCount += 1;
+        updatedCount += 1;
     }
 
-    return createdCount;
+    return updatedCount;
 };
 
 export const bootstrapSystemData = async (): Promise<void> => {
     const rolesCreated = await ensureDefaultRoles();
-    const adminUsersCreated = await ensureDefaultAdminUsers();
+    const adminUsersSynced = await ensureDefaultAdminUsers();
 
-    if (rolesCreated > 0 || adminUsersCreated > 0) {
+    if (rolesCreated > 0 || adminUsersSynced > 0) {
         console.log(
-            `System bootstrap completed: created ${rolesCreated} role(s) and ${adminUsersCreated} default admin account(s).`
+            `System bootstrap completed: created ${rolesCreated} role(s) and synced ${adminUsersSynced} default admin account(s).`
         );
         return;
     }

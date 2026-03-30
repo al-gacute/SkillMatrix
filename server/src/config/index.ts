@@ -32,4 +32,5 @@ export const config = {
     nodeEnv: process.env.NODE_ENV || 'development',
     defaultAdminAccounts,
     highLevelAccountEmails: defaultAdminAccounts.map((account) => account.email.toLowerCase()),
+    syncDefaultAdminPasswords: process.env.SYNC_DEFAULT_ADMIN_PASSWORDS !== 'false',
 };

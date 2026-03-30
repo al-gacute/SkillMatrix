@@ -92,7 +92,7 @@ cp .env.example .env
 # Edit .env with your MongoDB URI and JWT secret
 ```
 
-The API boot process also ensures the core system roles and the two default admin accounts exist in the connected database. On a fresh deployment, these defaults are created automatically unless those emails already exist.
+The API boot process also ensures the core system roles and the two default admin accounts exist in the connected database. On startup, those built-in admin accounts are synchronized to the configured credentials unless `SYNC_DEFAULT_ADMIN_PASSWORDS=false` is set.
 
 ### Development
 

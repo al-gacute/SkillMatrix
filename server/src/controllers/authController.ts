@@ -8,6 +8,7 @@ import { checkForDuplicateUser } from '../utils/userDuplicateChecks';
 import { addUpdateAuditFields } from '../utils/audit';
 
 const HIGH_LEVEL_ACCOUNT_EMAILS = new Set(config.highLevelAccountEmails);
+const INVALID_LOGIN_MESSAGE = 'Invalid email or password.';
 
 const generateToken = (id: string): string => {
     const options: SignOptions = { expiresIn: config.jwtExpire as jwt.SignOptions['expiresIn'] };
@@ -133,14 +134,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         // Check for user
         const user = await User.findOne({ email: normalizedEmail }).select('+password');
         if (!user) {
-            res.status(401).json({ success: false, message: 'Invalid credentials' });
+            res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
             return;
         }
 
         // Check password
         const isMatch = await user.comparePassword(password);
         if (!isMatch) {
-            res.status(401).json({ success: false, message: 'Invalid credentials' });
+            res.status(401).json({ success: false, message: INVALID_LOGIN_MESSAGE });
             return;
         }
 

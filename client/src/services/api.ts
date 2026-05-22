@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+export const AUTH_UNAUTHORIZED_EVENT = 'skillmatrix:unauthorized';
+
 const normalizeApiBaseUrl = (value?: string): string => {
     if (!value || !value.trim()) {
         return '/api';
@@ -46,10 +48,16 @@ api.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response?.status === 401) {
+        const requestUrl = typeof error.config?.url === 'string'
+            ? error.config.url.split('?')[0].replace(/\/+$/, '')
+            : '';
+        const isExpectedCredentialError =
+            requestUrl.endsWith('/auth/login') || requestUrl.endsWith('/auth/password');
+
+        if (error.response?.status === 401 && !isExpectedCredentialError) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
         }
         return Promise.reject(error);
     }

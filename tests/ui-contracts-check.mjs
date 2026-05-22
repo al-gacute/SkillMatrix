@@ -88,6 +88,39 @@ const checks = [
             assert.match(sectionsPage, /<select[\s\S]*value=\{formData\.department\}[\s\S]*required/);
         },
     },
+    {
+        name: 'login credential failures stay on the React login screen',
+        run() {
+            const loginPage = read('client/src/pages/Login.tsx');
+            const registerPage = read('client/src/pages/Register.tsx');
+            const layout = read('client/src/components/Layout.tsx');
+            const appLogo = read('client/src/components/AppLogo.tsx');
+            const apiService = read('client/src/services/api.ts');
+            const authContext = read('client/src/context/AuthContext.tsx');
+            const authController = read('server/src/controllers/authController.ts');
+
+            assert.match(loginPage, /<AppLogo to="\/" \/>/);
+            assert.match(registerPage, /<AppLogo to="\/" \/>/);
+            assert.doesNotMatch(layout, /<AppLogo\s+to=/);
+            assert.match(appLogo, /aria-label=\{label\}/);
+            assert.match(appLogo, /items-baseline/);
+            assert.doesNotMatch(appLogo, /label: '[169]'/);
+            assert.match(loginPage, /noValidate/);
+            assert.match(loginPage, /Email is required\./);
+            assert.match(loginPage, /Enter a valid email address\./);
+            assert.match(loginPage, /Password is required\./);
+            assert.match(loginPage, /await login\(email\.trim\(\), password\)/);
+            assert.match(apiService, /AUTH_UNAUTHORIZED_EVENT/);
+            assert.match(apiService, /requestUrl\.endsWith\('\/auth\/login'\)/);
+            assert.match(apiService, /requestUrl\.endsWith\('\/auth\/password'\)/);
+            assert.doesNotMatch(apiService, /window\.location\.href\s*=\s*['"]\/login['"]/);
+
+            assert.match(authContext, /window\.addEventListener\(AUTH_UNAUTHORIZED_EVENT,\s*handleUnauthorized\)/);
+            assert.match(authContext, /navigate\('\/login',\s*\{ replace: true \}\)/);
+            assert.match(authController, /const INVALID_LOGIN_MESSAGE = 'Invalid email or password\.'/);
+            assert.equal((authController.match(/message: INVALID_LOGIN_MESSAGE/g) || []).length, 2);
+        },
+    },
 ];
 
 let failed = false;

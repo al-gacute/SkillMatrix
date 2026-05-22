@@ -8,10 +8,35 @@ type LoginLocationState = {
     clearForm?: boolean;
 } | null;
 
+type LoginFieldErrors = {
+    email?: string;
+    password?: string;
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validateLoginForm = (email: string, password: string): LoginFieldErrors => {
+    const errors: LoginFieldErrors = {};
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+        errors.email = 'Email is required.';
+    } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
+        errors.email = 'Enter a valid email address.';
+    }
+
+    if (!password) {
+        errors.password = 'Password is required.';
+    }
+
+    return errors;
+};
+
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -27,16 +52,37 @@ const Login: React.FC = () => {
         setEmail('');
         setPassword('');
         setError('');
+        setFieldErrors({});
         setLoading(false);
     }, [locationState]);
+
+    const clearFieldError = (field: keyof LoginFieldErrors) => {
+        setFieldErrors((currentErrors) => {
+            if (!currentErrors[field]) {
+                return currentErrors;
+            }
+
+            const nextErrors = { ...currentErrors };
+            delete nextErrors[field];
+            return nextErrors;
+        });
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        const nextFieldErrors = validateLoginForm(email, password);
+        setFieldErrors(nextFieldErrors);
+
+        if (Object.keys(nextFieldErrors).length > 0) {
+            return;
+        }
+
         setLoading(true);
 
         try {
-            await login(email, password);
+            await login(email.trim(), password);
             navigate('/dashboard');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
@@ -50,7 +96,7 @@ const Login: React.FC = () => {
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="flex justify-center">
-                        <AppLogo />
+                        <AppLogo to="/" />
                     </div>
                     <p className="text-gray-600 mt-2">Sign in to your account</p>
                 </div>
@@ -72,6 +118,7 @@ const Login: React.FC = () => {
                         onSubmit={handleSubmit}
                         className="space-y-6"
                         autoComplete="off"
+                        noValidate
                     >
                         <div>
                             <label htmlFor="email" className="label">
@@ -82,12 +129,23 @@ const Login: React.FC = () => {
                                 name="email"
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                className="input"
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    setError('');
+                                    clearFieldError('email');
+                                }}
+                                className={`input ${fieldErrors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                                 autoComplete="off"
                                 required
+                                aria-invalid={fieldErrors.email ? 'true' : 'false'}
+                                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                                 placeholder="you@example.com"
                             />
+                            {fieldErrors.email && (
+                                <p id="email-error" className="mt-1 text-sm text-red-600">
+                                    {fieldErrors.email}
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -99,12 +157,23 @@ const Login: React.FC = () => {
                                 name="password"
                                 type="password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="input"
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    setError('');
+                                    clearFieldError('password');
+                                }}
+                                className={`input ${fieldErrors.password ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''}`}
                                 autoComplete="new-password"
                                 required
+                                aria-invalid={fieldErrors.password ? 'true' : 'false'}
+                                aria-describedby={fieldErrors.password ? 'password-error' : undefined}
                                 placeholder="••••••••"
                             />
+                            {fieldErrors.password && (
+                                <p id="password-error" className="mt-1 text-sm text-red-600">
+                                    {fieldErrors.password}
+                                </p>
+                            )}
                         </div>
 
                         <button

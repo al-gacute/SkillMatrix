@@ -69,7 +69,7 @@ const Register: React.FC = () => {
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="flex justify-center">
-                        <AppLogo />
+                        <AppLogo to="/" />
                     </div>
                     <p className="text-gray-600 mt-2">Create your account</p>
                 </div>

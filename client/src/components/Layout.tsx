@@ -147,7 +147,7 @@ const Layout: React.FC = () => {
                 <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
                 <div className="fixed inset-y-0 left-0 flex w-72 flex-col bg-white">
                     <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b">
-                        <AppLogo to="/dashboard" />
+                        <AppLogo />
                         <button onClick={() => setSidebarOpen(false)} className="text-gray-500 hover:text-gray-700">
                             <XMarkIcon className="h-6 w-6" />
                         </button>
@@ -238,7 +238,7 @@ const Layout: React.FC = () => {
             <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
                 <div className="flex flex-col flex-1 bg-white border-r border-gray-200">
                     <div className="flex h-16 shrink-0 items-center justify-between px-4 border-b">
-                        <AppLogo to="/dashboard" compact={sidebarCollapsed} />
+                        <AppLogo compact={sidebarCollapsed} />
                         <button
                             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                             className={`p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors ${sidebarCollapsed ? 'mx-auto' : ''}`}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { User, AuthState } from '../types';
 import { authService } from '../services';
+import { AUTH_UNAUTHORIZED_EVENT } from '../services/api';
 
 interface AuthContextType extends AuthState {
     login: (email: string, password: string) => Promise<void>;
@@ -67,6 +68,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         initAuth();
     }, []);
+
+    useEffect(() => {
+        const handleUnauthorized = () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+            navigate('/login', { replace: true });
+        };
+
+        window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+
+        return () => {
+            window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+        };
+    }, [navigate]);
 
     const getApiErrorMessage = (error: unknown, fallback: string): string => {
         if (axios.isAxiosError(error)) {
